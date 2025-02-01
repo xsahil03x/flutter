@@ -3,11 +3,10 @@
 // found in the LICENSE file.
 
 import 'package:flutter/material.dart';
-
+import '../utils.dart';
 import 'use_cases.dart';
 
 class CheckBoxListTile extends UseCase {
-
   @override
   String get name => 'CheckBoxListTile';
 
@@ -26,20 +25,34 @@ class _MainWidget extends StatefulWidget {
 class _MainWidgetState extends State<_MainWidget> {
   bool _checked = false;
 
+  String pageTitle = getUseCaseName(CheckBoxListTile());
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('CheckBoxListTile')),
-      body: Center(
-        child: CheckboxListTile(
-          value: _checked,
-          onChanged: (bool? value) {
-            setState(() {
-              _checked = value!;
-            });
-          },
-          title: const Text('a check box list title'),
-        ),
+      appBar: AppBar(title: Semantics(headingLevel: 1, child: Text('$pageTitle Demo'))),
+      body: ListView(
+        children: <Widget>[
+          CheckboxListTile(
+            value: _checked,
+            onChanged: (bool? value) {
+              setState(() {
+                _checked = value!;
+              });
+            },
+            title: const Text('a check box list title'),
+          ),
+          CheckboxListTile(
+            value: _checked,
+            onChanged: (bool? value) {
+              setState(() {
+                _checked = value!;
+              });
+            },
+            title: const Text('a disabled check box list title'),
+            enabled: false,
+          ),
+        ],
       ),
     );
   }

@@ -2,6 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+/// @docImport 'mock_canvas.dart';
+library;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 
 /// An [Invocation] and the [stack] trace that led to it.
@@ -9,7 +13,7 @@ import 'package:flutter/rendering.dart';
 /// Used by [TestRecordingCanvas] to trace canvas calls.
 class RecordedInvocation {
   /// Create a record for an invocation list.
-  const RecordedInvocation(this.invocation, { required this.stack });
+  const RecordedInvocation(this.invocation, {required this.stack});
 
   /// The method that was called and its arguments.
   ///
@@ -28,10 +32,9 @@ class RecordedInvocation {
 
   /// Converts [stack] to a string using the [FlutterError.defaultStackFilter]
   /// logic.
-  String stackToString({ String indent = '' }) {
-    return indent + FlutterError.defaultStackFilter(
-      stack.toString().trimRight().split('\n'),
-    ).join('\n$indent');
+  String stackToString({String indent = ''}) {
+    return indent +
+        FlutterError.defaultStackFilter(stack.toString().trimRight().split('\n')).join('\n$indent');
   }
 }
 
@@ -75,7 +78,12 @@ class TestRecordingCanvas implements Canvas {
   @override
   void saveLayer(Rect? bounds, Paint paint) {
     _saveCount += 1;
-    invocations.add(RecordedInvocation(_MethodCall(#saveLayer, <dynamic>[bounds, paint]), stack: StackTrace.current));
+    invocations.add(
+      RecordedInvocation(
+        _MethodCall(#saveLayer, <dynamic>[bounds, paint]),
+        stack: StackTrace.current,
+      ),
+    );
   }
 
   @override
@@ -96,6 +104,8 @@ class TestRecordingPaintingContext extends ClipContext implements PaintingContex
   /// Creates a [PaintingContext] for tests that use [TestRecordingCanvas].
   TestRecordingPaintingContext(this.canvas);
 
+  final List<OpacityLayer> _createdLayers = <OpacityLayer>[];
+
   @override
   final Canvas canvas;
 
@@ -113,7 +123,12 @@ class TestRecordingPaintingContext extends ClipContext implements PaintingContex
     Clip clipBehavior = Clip.hardEdge,
     ClipRectLayer? oldLayer,
   }) {
-    clipRectAndPaint(clipRect.shift(offset), clipBehavior, clipRect.shift(offset), () => painter(this, offset));
+    clipRectAndPaint(
+      clipRect.shift(offset),
+      clipBehavior,
+      clipRect.shift(offset),
+      () => painter(this, offset),
+    );
     return null;
   }
 
@@ -127,7 +142,12 @@ class TestRecordingPaintingContext extends ClipContext implements PaintingContex
     Clip clipBehavior = Clip.antiAlias,
     ClipRRectLayer? oldLayer,
   }) {
-    clipRRectAndPaint(clipRRect.shift(offset), clipBehavior, bounds.shift(offset), () => painter(this, offset));
+    clipRRectAndPaint(
+      clipRRect.shift(offset),
+      clipBehavior,
+      bounds.shift(offset),
+      () => painter(this, offset),
+    );
     return null;
   }
 
@@ -141,7 +161,12 @@ class TestRecordingPaintingContext extends ClipContext implements PaintingContex
     Clip clipBehavior = Clip.antiAlias,
     ClipPathLayer? oldLayer,
   }) {
-    clipPathAndPaint(clipPath.shift(offset), clipBehavior, bounds.shift(offset), () => painter(this, offset));
+    clipPathAndPaint(
+      clipPath.shift(offset),
+      clipBehavior,
+      bounds.shift(offset),
+      () => painter(this, offset),
+    );
     return null;
   }
 
@@ -170,7 +195,18 @@ class TestRecordingPaintingContext extends ClipContext implements PaintingContex
     canvas.saveLayer(null, Paint()); // TODO(ianh): Expose the alpha somewhere.
     painter(this, offset);
     canvas.restore();
-    return OpacityLayer();
+    final OpacityLayer layer = OpacityLayer();
+    _createdLayers.add(layer);
+    return layer;
+  }
+
+  /// Releases allocated resources.
+  @mustCallSuper
+  void dispose() {
+    for (final OpacityLayer layer in _createdLayers) {
+      layer.dispose();
+    }
+    _createdLayers.clear();
   }
 
   @override
@@ -187,11 +223,11 @@ class TestRecordingPaintingContext extends ClipContext implements PaintingContex
   VoidCallback addCompositionCallback(CompositionCallback callback) => () {};
 
   @override
-  void noSuchMethod(Invocation invocation) { }
+  void noSuchMethod(Invocation invocation) {}
 }
 
 class _MethodCall implements Invocation {
-  _MethodCall(this._name, [ this._arguments = const <dynamic>[]]);
+  _MethodCall(this._name, [this._arguments = const <dynamic>[]]);
   final Symbol _name;
   final List<dynamic> _arguments;
   @override
@@ -209,7 +245,7 @@ class _MethodCall implements Invocation {
   @override
   List<dynamic> get positionalArguments => _arguments;
   @override
-  List<Type> get typeArguments => const <Type> [];
+  List<Type> get typeArguments => const <Type>[];
 }
 
 String _valueName(Object? value) {
